@@ -7,6 +7,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
+import uvicorn
 
 # 載入 .env 文件中的環境變數
 load_dotenv()
@@ -92,3 +93,7 @@ async def create_news(news: NewsCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_news)
     return new_news  # 返回新創建的新聞
+
+# 如果此文件被直接執行，啟動 FastAPI 應用並綁定 8080 端口
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8080)
