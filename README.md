@@ -53,19 +53,27 @@ uvicorn main:app --reload
 # 測試說明
 ## 測試爬蟲腳本
 ### 可執行以下命令來測試爬取新聞是否成功：
-```python scraper.py```
+```
+python scraper.py
+```
 
 ## 測試 API
 ### 使用 ```curl``` 或 Postman 測試 API，例如：
-```curl -X GET http://127.0.0.1:8000/news```
+```
+curl -X GET http://127.0.0.1:8000/news
+```
 
 # 遷移命令
 本專案使用 Alembic 進行資料庫遷移。
 ## 1. 產生遷移文件
-```alembic revision --autogenerate -m "initial migration"```
+```
+alembic revision --autogenerate -m "initial migration"
+```
 
 ## 2. 執行資料庫遷移
-```alembic upgrade head```
+```
+alembic upgrade head
+```
 
 # 設計決策與假設
 -	爬取的新聞來源為```https://tw-nba.udn.com/nba/index```
