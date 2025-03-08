@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import os
 import logging
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 
 # 載入 .env 文件中的環境變數
 load_dotenv()
@@ -31,8 +32,16 @@ class News(Base):
     title = Column(String(255), nullable=False)
     link = Column(String(255), nullable=False, unique=True)
 
+# 定義 Lifespan 事件
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("應用程式啟動，建立資料表...")
+    Base.metadata.create_all(bind=engine)
+    yield
+    logger.info("應用程式關閉")
+
 # FastAPI 應用
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 # 設定 CORS 中介軟體
 app.add_middleware(
@@ -51,23 +60,15 @@ def get_db():
     finally:
         db.close()
 
-# 創建資料表
-@app.on_event("startup")
-async def startup():
-    # 建立資料表
-    Base.metadata.create_all(bind=engine)
-
 # 新聞列表 API 端點
 @app.get("/news")
 async def get_news(db: Session = Depends(get_db)):
-    # 使用 SQLAlchemy ORM 查詢所有新聞
     news_list = db.query(News).all()
     return news_list  # FastAPI 會自動處理為 JSON 格式
 
 # 單條新聞詳情 API 端點
 @app.get("/news/{news_id}")
 async def get_news_detail(news_id: int, db: Session = Depends(get_db)):
-    # 使用 SQLAlchemy ORM 查詢指定的新聞
     news_item = db.query(News).filter(News.id == news_id).first()
     if news_item is None:
         raise HTTPException(status_code=404, detail="News not found")
