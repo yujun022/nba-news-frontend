@@ -94,6 +94,6 @@ async def create_news(news: NewsCreate, db: Session = Depends(get_db)):
     db.refresh(new_news)
     return new_news  # 返回新創建的新聞
 
-# 如果此文件被直接執行，啟動 FastAPI 應用並綁定 8080 端口
+# 如果此文件被直接執行，啟動 FastAPI 應用並綁定 8000 端口
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # 使用 8000 端口
