@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import os
 import logging
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 
 # 載入 .env 文件中的環境變數
 load_dotenv()
@@ -31,8 +32,16 @@ class News(Base):
     title = Column(String(255), nullable=False)
     link = Column(String(255), nullable=False, unique=True)
 
+# 定義 Lifespan 事件
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("應用程式啟動，建立資料表...")
+    Base.metadata.create_all(bind=engine)
+    yield
+    logger.info("應用程式關閉")
+
 # FastAPI 應用
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 # 設定 CORS 中介軟體
 app.add_middleware(
@@ -51,44 +60,35 @@ def get_db():
     finally:
         db.close()
 
-# 創建資料表
-@app.on_event("startup")
-async def startup():
-    # 建立資料表
-    Base.metadata.create_all(bind=engine)
-
 # 新聞列表 API 端點
 @app.get("/news")
 async def get_news(db: Session = Depends(get_db)):
-    # 使用 SQLAlchemy ORM 查詢所有新聞資料
-    news_list = db.query(News).all()  
-    return news_list  # 會自動將 ORM 物件轉換為 JSON 格式
+    news_list = db.query(News).all()
+    return news_list  # FastAPI 會自動處理為 JSON 格式
 
-# 新聞詳細頁面 API 端點
+# 單條新聞詳情 API 端點
 @app.get("/news/{news_id}")
 async def get_news_detail(news_id: int, db: Session = Depends(get_db)):
-    # 使用 SQLAlchemy ORM 查詢指定 ID 的新聞
     news_item = db.query(News).filter(News.id == news_id).first()
     if news_item is None:
         raise HTTPException(status_code=404, detail="News not found")
-    return news_item
+    return news_item  # FastAPI 會自動處理為 JSON 格式
 
-# 定義接收新聞資料的 Pydantic 模型
+# 定義新增新聞的請求模型
 class NewsCreate(BaseModel):
     title: str
     link: str
 
-# 新增新聞 API 端點
 @app.post("/news")
 async def create_news(news: NewsCreate, db: Session = Depends(get_db)):
-    # 檢查資料庫中是否已經存在相同的新聞
-    existing_news = db.query(News).filter(News.link == news.link).first()
+    # 檢查是否已經有相同的新聞存在
+    existing_news = db.query(News).filter_by(link=news.link).first()
     if existing_news:
         raise HTTPException(status_code=400, detail="News already exists")
     
-    # 如果沒有重複，則新增新聞
+    # 如果沒有重複，新增新聞
     new_news = News(title=news.title, link=news.link)
     db.add(new_news)
     db.commit()
     db.refresh(new_news)
-    return new_news
+    return new_news  # 返回新創建的新聞
