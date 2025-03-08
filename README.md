@@ -17,6 +17,7 @@ pip install -r requirements.txt
 DATABASE_URL=mysql+pymysql://user:password@localhost:3306/nba_news
 ```
 ## 4. 運行專案
+
 ```uvicorn main:app --reload```
 
 前端請使用 Live Server 或其他 HTTP 伺服器來開啟 index.html。
