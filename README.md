@@ -6,93 +6,77 @@
 
 -	Python 3.8+
 -	MySQL 資料庫
-  
+-	Node.js (用於前端開發)
 ## 2 . 安裝依賴套件
-```bash
+bash
 pip install -r requirements.txt
-```
+
 ## 3. 設定環境變數
-請在專案根目錄建立 ```bash .env``` 檔案，內容如下：
-```bash
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=你的密碼
-DB_NAME=plurk
-```
-## 4. 建立資料庫
+請在專案根目錄建立 
+bash .env
+ 檔案，內容如下：
+bash
+DATABASE_URL=mysql+pymysql://user:password@localhost:3306/nba_news
 
-```
-source schema.sql;
-source post.sql;
+## 4. 運行專案
 
-```
-
-## 5. 運行專案
-啟動 FastAPI 伺服器
-```
 uvicorn main:app --reload
 
-```
 
-啟動排程系統
-```
-python scheduler.py
-
-```
-
+前端請使用 Live Server 或其他 HTTP 伺服器來開啟 index.html。
 # API 文件
-## 1. 獲取所有預約貼文
-### GET /api/scheduled_posts
-```
-[
-  {
+## 1. 獲取新聞列表
+### GET /news
+{
     "id": 1,
-    "content": "這是一則預約貼文",
-    "posted": "2025-03-15T22:45:00",
-    "is_posted": false,
-    "user_id": 1
-  },
-  ...
-]
-
-```
-## 2. 新增預約貼文
-### POST /api/scheduled_posts
-```
-{
-  "content": "這是一則新的預約貼文",
-  "posted": "2025-03-15T23:00:00",
-  "user_id": 1
+    "title": "NBA 最新消息",
+    "link": "https://example.com/news/1"
 }
 
-```
-## 3. 編輯預約貼文
-### PUT /api/scheduled_posts/{id}
-```
+## 2. 獲取新聞詳情
+### GET /news/{news_id}
 {
-  "content": "修改後的內容",
-  "posted": "2025-03-16T10:00:00"
+  "id": 1,
+  "title": "NBA 最新消息",
+  "link": "https://example.com/news/1"
 }
 
-```
-## 4. 刪除預約貼文
-### DELETE /api/scheduled_posts/{id}
+## 3. 新增新聞
+### POST /news
 {
-  "content": "修改後的內容",
-  "posted": "2025-03-16T10:00:00"
+  "title": "NBA 最新消息",
+  "link": "https://example.com/news/1"
 }
-
-```
 
 # 測試說明
-## 測試排程功能
-### 執行以下指令，每隔 60 秒會檢查是否有需要發佈的貼文
-```
-python scheduler.py
+## 測試爬蟲腳本
+### 可執行以下命令來測試爬取新聞是否成功：
+python scraper.py
 
-```
+
+## 測試 API
+### 使用 
+curl
+ 或 Postman 測試 API，例如：
+curl -X GET http://127.0.0.1:8000/news
+
+
+# 遷移命令
+本專案使用 Alembic 進行資料庫遷移。
+## 1. 產生遷移文件
+alembic revision --autogenerate -m "initial migration"
+
+
+## 2. 執行資料庫遷移
+alembic upgrade head
+
 
 # 設計決策與假設
--	預約貼文存放於 scheduled_posts 資料表，欄位包括 id、content、posted、is_posted、user_id
--	當時間達到 posted 時，scheduler.py 將自動檢查並將貼文移至 posts 資料表，同時更新 is_posted 為 TRUE
+-	爬取的新聞來源為
+https://tw-nba.udn.com/nba/index
 
+-	透過 
+BeautifulSoup
+ 解析 HTML 來獲取新聞標題與連結
+-	新聞標題與連結存入 MySQL，並透過 FastAPI 提供 API
+-	允許 CORS 請求，以支援前端 AJAX 呼叫
